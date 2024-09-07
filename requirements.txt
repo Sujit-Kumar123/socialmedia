@@ -1,0 +1,12 @@
+asgiref==3.8.1
+Django==4.2.11
+django-filter==24.2
+djangorestframework==3.15.1
+djangorestframework-simplejwt==5.3.1
+importlib-metadata==7.1.0
+Markdown==3.6
+PyJWT==2.8.0
+sqlparse==0.5.0
+typing-extensions==4.11.0
+tzdata==2024.1
+zipp==3.18.1
