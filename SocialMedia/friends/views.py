@@ -128,22 +128,42 @@ class PostLikeAPIView(APIView):
 class UserFollowAPIView(APIView):
     @validate_token
     def post(self, request, user_id, format='json'):
-        if UserFollow.objects.filter(user=request.user, follows_id=user_id).exists():
-            return Response({'detail': 'Already following this user.'}, status=status.HTTP_400_BAD_REQUEST)
-
+        existing_follow = UserFollow.objects.filter(user=request.user, follows_id=user_id).first()
+        if existing_follow:
+            if existing_follow.status == UserFollow.FOLLOW_ACCEPTED:
+                return Response({'detail': 'Already following this user.'}, status=status.HTTP_400_BAD_REQUEST)
+            elif existing_follow.status == UserFollow.FOLLOW_REQUESTED:
+                return Response({'detail': 'Follow request already sent.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         data = {'follows': user_id}
-        # print(request.user.id, user_id)
         serializer = UserFollowSerializer(data=data, context={'request': request})
         
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save(user=request.user, status=UserFollow.FOLLOW_REQUESTED)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @validate_token
+    def put(self, request, user_id, format='json'):
+        follow_request = get_object_or_404(UserFollow, user=user_id, follows=request.user)
+        
+        if request.data.get('action') == 'accept':
+            follow_request.status = UserFollow.FOLLOW_ACCEPTED
+            follow_request.save()
+            return Response({'detail': 'Follow request accepted.'}, status=status.HTTP_200_OK)
+        elif request.data.get('action') == 'deny':
+            follow_request.status = UserFollow.FOLLOW_DENIED
+            follow_request.save()
+            return Response({'detail': 'Follow request denied.'}, status=status.HTTP_200_OK)
+        
+        return Response({'detail': 'Invalid action.'}, status=status.HTTP_400_BAD_REQUEST)
 
     @validate_token
     def delete(self, request, user_id, format='json'):
-        follow = get_object_or_404(UserFollow, user=request.user, follows_id=user_id)
-        follow.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        follow_request = get_object_or_404(UserFollow, user=request.user, follows_id=user_id)
+        if follow_request.status == UserFollow.FOLLOW_ACCEPTED:
+            follow_request.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'detail': 'Cannot unfollow a user without an accepted follow.'},status=status.HTTP_400_BAD_REQUEST)
 
 

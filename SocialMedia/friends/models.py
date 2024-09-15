@@ -73,8 +73,21 @@ class PostComment(models.Model):
 
 
 class UserFollow(models.Model):
+    FOLLOW_REQUESTED = 'requested'
+    FOLLOW_ACCEPTED = 'accepted'
+    FOLLOW_DENIED = 'denied'
+
+    FOLLOW_STATUS_CHOICES = [
+        (FOLLOW_REQUESTED, 'Requested'),
+        (FOLLOW_ACCEPTED, 'Accepted'),
+        (FOLLOW_DENIED, 'Denied'),
+    ]
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='following')
     follows = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='followers')
+    status = models.CharField(max_length=10, choices=FOLLOW_STATUS_CHOICES, default=FOLLOW_REQUESTED)
+
 
     class Meta:
         unique_together = ('user', 'follows')  
+        verbose_name = 'User Follow'
+        verbose_name_plural = 'User Follows'

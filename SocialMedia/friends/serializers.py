@@ -102,3 +102,5 @@ class UserFollowSerializer(serializers.ModelSerializer):
         read_only_fields = ('user',) 
 
     follows = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    status = serializers.ChoiceField(choices=UserFollow.FOLLOW_STATUS_CHOICES, read_only=True)
+
